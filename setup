@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+require "rubygems"
+require "bundler/setup"
+require "httparty"
+require "nokogiri"
+require "reverse_markdown"
+
+year = ARGV[0]
+day = ARGV[1]
+cookie = begin
+           File.read(".cookie")
+         rescue Errono::ENOENT => e
+           ENV["AOC_COOKIE"]
+         end
+
+unless year && day
+  puts "Please specify the year and day of the challenge. e.g : setup 2017 01"
+  exit 1
+end
+
+unless cookie
+  puts "Please setup a .cookie file, or pass an AOC_COOKIE env variable, to fetch your input"
+  exit 1
+end
+
+base_path = "https://adventofcode.com/#{year}/day/#{day.to_i}"
+
+# Fetching input
+resp = HTTParty.get("#{base_path}/input", headers: {"Cookie" => cookie})
+input = resp.body
+
+# Fetching readme
+resp = HTTParty.get(base_path, headers: {"Cookie" => cookie})
+doc = Nokogiri::HTML(resp.body)
+html = doc.xpath("//article").children.map(&:to_s).join
+readme = ReverseMarkdown.convert html, unknown_tags: :drop
+
+# Creating files
+folder = "#{year}/#{day}"
+
+`mkdir -p #{folder}`
+File.open("#{folder}/input.txt", "wb") { |f| f.write input }
+File.open("#{folder}/README.md", "wb") { |f| f.write readme }
+
+template = <<~EXS
+### Main logic
+defmodule Aoc do
+  def solve1(input) do
+    input
+  end
+
+  def solve2(input) do
+    input
+  end
+end
+
+### Actual run
+input = File.read!("input.txt")
+  |> String.split("\\n", trim: true)
+
+IO.inspect(Aoc.solve1(input), label: "First part")
+IO.inspect(Aoc.solve2(input), label: "First part")
+
+### Tests
+ExUnit.start()
+
+defmodule Test do
+  use ExUnit.Case
+  import Aoc
+
+  test "first part" do
+    assert solve1([]) == nil
+  end
+
+  test "second part" do
+    assert solve2([]) == nil
+  end
+end
+EXS
+
+if !File.exist?("#{folder}/run.exs")
+  File.open("#{folder}/run.exs", "wb") { |f| f.write template }
+end
