@@ -59,7 +59,7 @@ input = File.read!("input.txt")
   |> String.split("\\n", trim: true)
 
 IO.inspect(Aoc.solve1(input), label: "First part")
-IO.inspect(Aoc.solve2(input), label: "First part")
+IO.inspect(Aoc.solve2(input), label: "Second part")
 
 ### Tests
 ExUnit.start()
